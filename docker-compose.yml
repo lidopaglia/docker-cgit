@@ -1,0 +1,42 @@
+
+volumes:
+  cgit_data:
+
+networks:
+  cgit-net:
+    driver: bridge
+    driver_opts:
+      "com.docker.network.bridge.name": "cgit-net"
+    ipam:
+      driver: default
+      config:
+      - subnet: 10.10.10.0/24
+        gateway: 10.10.10.1
+
+services:
+  cgit:
+    container_name: cgit
+    build: ./cgit
+    image: cgit
+    restart: unless-stopped
+    networks:
+      - cgit-net
+    volumes:
+      - cgit_data:/var/lib/git:ro
+
+  nginx-proxy:
+    container_name: cgit-nginx-proxy
+    image: nginx:1.11.10
+    restart: unless-stopped
+    networks:
+      - cgit-net
+    links:
+      - cgit:cgit
+    ports:
+      - 8000:8000
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/cgit-static:/usr/share/cgit:ro
+    depends_on:
+     - cgit
+
